@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LITG Stroke Recorder</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>LITG Stroke Recorder</h1>
+      <p class="subtitle">Trace stroke order; export with timestamps in the green channel.</p>
+    </header>
+
+    <main>
+      <section id="drop-zone" class="drop-zone">
+        <p>Drop PNG here, or click to browse.</p>
+        <input type="file" id="file-input" accept="image/png,image/jpeg" hidden />
+      </section>
+
+      <section id="workspace" class="workspace hidden">
+        <canvas id="canvas"></canvas>
+
+        <aside class="controls">
+          <label>
+            Source opacity
+            <input type="range" id="opacity-slider" min="0" max="100" value="50" />
+          </label>
+
+          <label>
+            Brush radius (px)
+            <input type="range" id="brush-radius" min="1" max="40" value="10" />
+          </label>
+
+          <button id="btn-undo">Undo last stroke</button>
+          <button id="btn-clear">Clear all</button>
+          <button id="btn-preview">Preview reveal</button>
+          <button id="btn-export">Export PNG</button>
+
+          <div class="info">
+            <span id="stroke-count">0 strokes</span>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
