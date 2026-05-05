@@ -3,6 +3,8 @@ import { encodeStrokes } from '../lib/encoder.js';
 export function setupControls({ state, renderer, recorder, preview }) {
   const opacity = document.getElementById('opacity-slider');
   const brush = document.getElementById('brush-radius');
+  const previewDuration = document.getElementById('preview-duration');
+  const previewDurationLabel = document.getElementById('preview-duration-label');
   const undo = document.getElementById('btn-undo');
   const clear = document.getElementById('btn-clear');
   const previewBtn = document.getElementById('btn-preview');
@@ -16,6 +18,12 @@ export function setupControls({ state, renderer, recorder, preview }) {
   brush.addEventListener('input', () => {
     state.brushRadius = parseInt(brush.value, 10);
     renderer.render();
+  });
+
+  previewDuration.addEventListener('input', () => {
+    const secs = parseInt(previewDuration.value, 10);
+    state.previewDurationMs = secs * 1000;
+    previewDurationLabel.textContent = secs;
   });
 
   undo.addEventListener('click', () => state.store.undo());

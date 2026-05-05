@@ -11,7 +11,6 @@ export function setupPreview(state) {
 
   let raf = null;
   let startTime = 0;
-  const durationMs = 4000;
 
   // Cached per-play to avoid recomputing on every frame
   let timestampBuf = null;
@@ -86,7 +85,7 @@ export function setupPreview(state) {
 
   function tick() {
     const elapsed = performance.now() - startTime;
-    const progress = Math.min(1, elapsed / durationMs);
+    const progress = Math.min(1, elapsed / state.previewDurationMs);
 
     drawFrame(progress);
 

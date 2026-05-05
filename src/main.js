@@ -11,6 +11,7 @@ const state = {
   canvas: document.getElementById('canvas'),
   brushRadius: 10,
   sourceOpacity: 0.5,
+  previewDurationMs: 4000,
   strokeCountEl: document.getElementById('stroke-count'),
   requestRender: null, // set below
 };
