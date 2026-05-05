@@ -12,6 +12,8 @@ const state = {
   brushRadius: 10,
   sourceOpacity: 0.5,
   previewDurationMs: 4000,
+  parallelMode: true,
+  strokeDelayMs: 0,
   strokeCountEl: document.getElementById('stroke-count'),
   requestRender: null, // set below
 };

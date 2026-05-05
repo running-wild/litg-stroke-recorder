@@ -11,6 +11,7 @@ export function setupPreview(state) {
 
   let raf = null;
   let startTime = 0;
+  let animationDurationMs = 0;
 
   // Cached per-play to avoid recomputing on every frame
   let timestampBuf = null;
@@ -63,29 +64,56 @@ export function setupPreview(state) {
 
     const resampled = state.store.strokes.map((s) => resampleByArcLength(s, 1.0));
     const lengths = resampled.map(arcLengthOf);
-    const total = lengths.reduce((a, b) => a + b, 0);
-    if (total === 0) return;
 
-    let cumulative = 0;
-    for (let i = 0; i < resampled.length; i++) {
-      const stroke = resampled[i];
-      const strokeStart = cumulative;
+    if (state.parallelMode) {
+      const n = resampled.length;
+      const totalDurationMs = state.previewDurationMs + (n - 1) * state.strokeDelayMs;
+      animationDurationMs = totalDurationMs;
 
-      for (let j = 0; j < stroke.length; j++) {
-        const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
-        cumulative += localLen;
-        const t = cumulative / total;
-        stampDisc(timestampBuf, width, height, stroke[j].x, stroke[j].y,
-          state.brushRadius, Math.round(t * 255), 255);
+      for (let i = 0; i < n; i++) {
+        const stroke = resampled[i];
+        const strokeLen = lengths[i];
+        if (strokeLen === 0) continue;
+
+        const startByte = Math.round((i * state.strokeDelayMs / totalDurationMs) * 255);
+        const endByte   = Math.round(((i * state.strokeDelayMs + state.previewDurationMs) / totalDurationMs) * 255);
+        const range = endByte - startByte;
+
+        let localCumulative = 0;
+        for (let j = 0; j < stroke.length; j++) {
+          const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
+          localCumulative += localLen;
+          const t = localCumulative / strokeLen;
+          stampDisc(timestampBuf, width, height, stroke[j].x, stroke[j].y,
+            state.brushRadius, startByte + Math.round(t * range), 255);
+        }
       }
+    } else {
+      animationDurationMs = state.previewDurationMs;
+      const total = lengths.reduce((a, b) => a + b, 0);
+      if (total === 0) return;
 
-      cumulative = strokeStart + lengths[i];
+      let cumulative = 0;
+      for (let i = 0; i < resampled.length; i++) {
+        const stroke = resampled[i];
+        const strokeStart = cumulative;
+
+        for (let j = 0; j < stroke.length; j++) {
+          const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
+          cumulative += localLen;
+          const t = cumulative / total;
+          stampDisc(timestampBuf, width, height, stroke[j].x, stroke[j].y,
+            state.brushRadius, Math.round(t * 255), 255);
+        }
+
+        cumulative = strokeStart + lengths[i];
+      }
     }
   }
 
   function tick() {
     const elapsed = performance.now() - startTime;
-    const progress = Math.min(1, elapsed / state.previewDurationMs);
+    const progress = Math.min(1, elapsed / animationDurationMs);
 
     drawFrame(progress);
 

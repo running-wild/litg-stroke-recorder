@@ -17,7 +17,7 @@
  *   5. Compose final image: copy source R channel, write G from timestamp buffer,
  *      B=0, A=255
  */
-export function encodeStrokes({ sourceImage, strokes, brushRadius }) {
+export function encodeStrokes({ sourceImage, strokes, brushRadius, parallelMode = false, strokeDelayMs = 0, previewDurationMs = 4000 }) {
   if (!sourceImage || strokes.length === 0) {
     throw new Error('Cannot encode: no source image or no strokes recorded.');
   }
@@ -25,31 +25,50 @@ export function encodeStrokes({ sourceImage, strokes, brushRadius }) {
   const width = sourceImage.width;
   const height = sourceImage.height;
 
-  // 1. Resample strokes by arc length (1px spacing) and compute cumulative length.
+  // 1. Resample strokes by arc length (1px spacing).
   const resampled = strokes.map((s) => resampleByArcLength(s, 1.0));
   const strokeLengths = resampled.map(arcLengthOf);
-  const totalLength = strokeLengths.reduce((a, b) => a + b, 0);
-
-  if (totalLength === 0) {
-    throw new Error('Cannot encode: total stroke length is zero.');
-  }
 
   // 2. Assign normalized timestamp [0,1] to each resampled point.
-  let cumulative = 0;
   const timestampedPoints = [];
-  for (let i = 0; i < resampled.length; i++) {
-    const stroke = resampled[i];
-    const strokeStartLen = cumulative;
 
-    for (let j = 0; j < stroke.length; j++) {
-      const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
-      cumulative += localLen;
-      const t = cumulative / totalLength;
-      timestampedPoints.push({ x: stroke[j].x, y: stroke[j].y, t });
+  if (parallelMode) {
+    const n = resampled.length;
+    const totalDurationMs = previewDurationMs + (n - 1) * strokeDelayMs;
+
+    for (let i = 0; i < n; i++) {
+      const stroke = resampled[i];
+      const strokeLen = strokeLengths[i];
+      if (strokeLen === 0) continue;
+
+      const tStart = (i * strokeDelayMs) / totalDurationMs;
+      const tEnd   = (i * strokeDelayMs + previewDurationMs) / totalDurationMs;
+
+      let localCumulative = 0;
+      for (let j = 0; j < stroke.length; j++) {
+        const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
+        localCumulative += localLen;
+        const t = tStart + (localCumulative / strokeLen) * (tEnd - tStart);
+        timestampedPoints.push({ x: stroke[j].x, y: stroke[j].y, t });
+      }
     }
+  } else {
+    const totalLength = strokeLengths.reduce((a, b) => a + b, 0);
+    if (totalLength === 0) throw new Error('Cannot encode: total stroke length is zero.');
 
-    // Ensure stroke boundaries match `strokeStartLen + strokeLengths[i]`
-    cumulative = strokeStartLen + strokeLengths[i];
+    let cumulative = 0;
+    for (let i = 0; i < resampled.length; i++) {
+      const stroke = resampled[i];
+      const strokeStartLen = cumulative;
+
+      for (let j = 0; j < stroke.length; j++) {
+        const localLen = j > 0 ? distance(stroke[j - 1], stroke[j]) : 0;
+        cumulative += localLen;
+        timestampedPoints.push({ x: stroke[j].x, y: stroke[j].y, t: cumulative / totalLength });
+      }
+
+      cumulative = strokeStartLen + strokeLengths[i];
+    }
   }
 
   // 3. Read source pixel data.

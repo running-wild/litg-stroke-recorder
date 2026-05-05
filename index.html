@@ -23,18 +23,28 @@
 
         <aside class="controls">
           <label>
-            Source opacity
+            Source opacity (<span id="opacity-label">50</span>%)
             <input type="range" id="opacity-slider" min="0" max="100" value="50" />
           </label>
 
           <label>
-            Brush radius (px)
+            Brush radius (<span id="brush-radius-label">10</span> px)
             <input type="range" id="brush-radius" min="1" max="40" value="10" />
           </label>
 
           <label>
-            Preview duration (<span id="preview-duration-label">4</span>s)
-            <input type="range" id="preview-duration" min="1" max="20" value="4" />
+            Preview duration (<span id="preview-duration-label">4</span> s)
+            <input type="range" id="preview-duration" min="150" max="5000" step="50" value="4000" />
+          </label>
+
+          <label class="toggle-label">
+            <input type="checkbox" id="parallel-toggle" checked />
+            Parallel Mode
+          </label>
+
+          <label id="stroke-delay-row">
+            Stroke delay (<span id="stroke-delay-label">0</span> s)
+            <input type="range" id="stroke-delay" min="0" max="2000" step="50" value="0" />
           </label>
 
           <button id="btn-undo">Undo last stroke</button>
